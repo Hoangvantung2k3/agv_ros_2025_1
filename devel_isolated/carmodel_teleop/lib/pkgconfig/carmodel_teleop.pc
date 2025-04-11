@@ -1,0 +1,8 @@
+prefix=/home/tung/agv_ros_2025_1/devel_isolated/carmodel_teleop
+
+Name: carmodel_teleop
+Description: Description of carmodel_teleop
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

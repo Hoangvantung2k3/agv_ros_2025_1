@@ -1,0 +1,8 @@
+prefix=/home/tung/agv_ros_2025_1/devel_isolated/ig_lio
+
+Name: ig_lio
+Description: Description of ig_lio
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

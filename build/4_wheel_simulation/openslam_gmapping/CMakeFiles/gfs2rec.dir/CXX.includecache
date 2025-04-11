@@ -1,0 +1,44 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/tung/agv_ros_2025_1/src/4_wheel_simulation/openslam_gmapping/gridfastslam/gfs2rec.cpp
+cstring
+-
+iostream
+-
+fstream
+-
+sstream
+-
+vector
+-
+list
+-
+gmapping/utils/point.h
+-
+
+/home/tung/agv_ros_2025_1/src/4_wheel_simulation/openslam_gmapping/include/gmapping/utils/gvalues.h
+values.h
+-
+limits.h
+-
+math.h
+-
+limits
+-
+
+/home/tung/agv_ros_2025_1/src/4_wheel_simulation/openslam_gmapping/include/gmapping/utils/point.h
+assert.h
+-
+math.h
+-
+iostream
+-
+gmapping/utils/gvalues.h
+/home/tung/agv_ros_2025_1/src/4_wheel_simulation/openslam_gmapping/include/gmapping/utils/gmapping/utils/gvalues.h
+

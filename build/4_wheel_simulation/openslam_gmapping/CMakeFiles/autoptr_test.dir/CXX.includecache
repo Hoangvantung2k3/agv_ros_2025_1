@@ -1,0 +1,18 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/tung/agv_ros_2025_1/src/4_wheel_simulation/openslam_gmapping/include/gmapping/utils/autoptr.h
+assert.h
+-
+
+/home/tung/agv_ros_2025_1/src/4_wheel_simulation/openslam_gmapping/utils/autoptr_test.cpp
+iostream
+-
+gmapping/utils/autoptr.h
+/home/tung/agv_ros_2025_1/src/4_wheel_simulation/openslam_gmapping/utils/gmapping/utils/autoptr.h
+

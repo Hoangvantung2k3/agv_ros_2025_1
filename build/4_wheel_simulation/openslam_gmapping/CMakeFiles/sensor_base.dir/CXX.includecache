@@ -1,0 +1,32 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/tung/agv_ros_2025_1/devel/include/gmapping/sensor/sensor_base/sensor_base_export.h
+
+/home/tung/agv_ros_2025_1/src/4_wheel_simulation/openslam_gmapping/include/gmapping/sensor/sensor_base/sensor.h
+string
+-
+map
+-
+gmapping/sensor/sensor_base/sensor_base_export.h
+-
+
+/home/tung/agv_ros_2025_1/src/4_wheel_simulation/openslam_gmapping/include/gmapping/sensor/sensor_base/sensorreading.h
+gmapping/sensor/sensor_base/sensor.h
+/home/tung/agv_ros_2025_1/src/4_wheel_simulation/openslam_gmapping/include/gmapping/sensor/sensor_base/gmapping/sensor/sensor_base/sensor.h
+gmapping/sensor/sensor_base/sensor_base_export.h
+-
+
+/home/tung/agv_ros_2025_1/src/4_wheel_simulation/openslam_gmapping/sensor/sensor_base/sensor.cpp
+gmapping/sensor/sensor_base/sensor.h
+/home/tung/agv_ros_2025_1/src/4_wheel_simulation/openslam_gmapping/sensor/sensor_base/gmapping/sensor/sensor_base/sensor.h
+
+/home/tung/agv_ros_2025_1/src/4_wheel_simulation/openslam_gmapping/sensor/sensor_base/sensorreading.cpp
+gmapping/sensor/sensor_base/sensorreading.h
+/home/tung/agv_ros_2025_1/src/4_wheel_simulation/openslam_gmapping/sensor/sensor_base/gmapping/sensor/sensor_base/sensorreading.h
+

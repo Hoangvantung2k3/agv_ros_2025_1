@@ -1,0 +1,8 @@
+prefix=/home/tung/agv_ros_2025_1/devel
+
+Name: realsense_simulation
+Description: Description of realsense_simulation
+Version: 0.0.2
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

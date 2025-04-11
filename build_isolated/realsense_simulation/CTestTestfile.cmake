@@ -1,0 +1,7 @@
+# CMake generated Testfile for 
+# Source directory: /home/tung/agv_ros_2025_1/src/4_wheel_simulation/realsense-ros/realsense_simulation
+# Build directory: /home/tung/agv_ros_2025_1/build_isolated/realsense_simulation
+# 
+# This file includes the relevant testing commands required for 
+# testing this directory and lists subdirectories to be tested as well.
+subdirs("gtest")

@@ -1,0 +1,8 @@
+prefix=/home/tung/agv_ros_2025_1/devel_isolated/carmodel_nav
+
+Name: carmodel_nav
+Description: Description of carmodel_nav
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

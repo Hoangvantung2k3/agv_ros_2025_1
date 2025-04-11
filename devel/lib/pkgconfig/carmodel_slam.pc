@@ -1,0 +1,8 @@
+prefix=/home/tung/agv_ros_2025_1/devel
+
+Name: carmodel_slam
+Description: Description of carmodel_slam
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

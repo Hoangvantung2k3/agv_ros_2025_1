@@ -1,0 +1,240 @@
+<?xml version="1.0" ?>
+<robot name="m2wr" xmlns:xacro="https://www.ros.org/wiki/xacro" >   <!-- this second parameter is importent to make this file a valid xacro file -->
+
+
+    <gazebo reference="motor_1">
+        <material>Gazebo/Gray</material>
+    </gazebo>
+    <gazebo reference="motor_2">
+        <material>Gazebo/Gray</material>
+    </gazebo>
+    <gazebo reference="motor_3">
+        <material>Gazebo/Gray</material>
+    </gazebo>
+    <gazebo reference="motor_4">
+        <material>Gazebo/Gray</material>
+    </gazebo>
+    <gazebo reference="battery">
+        <material>Gazebo/Gray</material>
+    </gazebo>
+    <gazebo reference="base_link">
+        <material>Gazebo/White</material>
+    </gazebo>
+    <gazebo reference="rear_left_wheel_link">
+        <material>Gazebo/Gray</material>
+    </gazebo>
+    <gazebo reference="rear_right_wheel_link">
+        <material>Gazebo/Gray</material>
+    </gazebo>
+        <gazebo reference="sensor_link">
+        <material>Gazebo/Red</material>
+    </gazebo>
+    <!--test them banh-->
+    <gazebo reference="front_right_wheel_link">
+        <material>Gazebo/Gray</material>
+    </gazebo>
+    <gazebo reference="front_left_wheel_link">
+        <material>Gazebo/Gray</material>
+    </gazebo>
+            <material name="gray">
+    <color rgba="0.5 0.5 0.5 1.0"/> <!-- Gray color -->
+</material>
+
+
+
+    <gazebo>
+        <plugin filename="libgazebo_ros_diff_drive.so" name="differential_drive_controller">
+        <legacyMode>true</legacyMode>
+        <alwaysOn>true</alwaysOn>
+        <updateRate>20</updateRate>
+        <leftJoint>rear_left_wheel_joint </leftJoint>
+        <rightJoint>rear_right_wheel_joint </rightJoint>
+        <!-- <leftJoint>front_left_wheel_joint</leftJoint> -->
+        <!-- <rightJoint>front_right_wheel_joint</rightJoint> -->
+        <!-- khoảng cách giữa các bánh xe -->
+        <wheelSeparation>0.6</wheelSeparation>
+        <!-- đường kính của bánh xe, sử dụng để áp dụng công thức, tuy nhiên phần này nó đang được set up cho plugin và thông số thì có vẻ chưa đúng với thực tế trong model của gazebo đâu -->
+        <wheelDiameter>0.2</wheelDiameter>
+        <!-- giói hạn lực -->
+        <wheelTorque>2</wheelTorque>
+        <!-- topic để plugin nghe lệnh điều khiến tốc độ -->
+        <commandTopic>/cmd_vel</commandTopic>
+        <!-- gửi thông tin cho odom -->
+        <odometryTopic>/odom</odometryTopic>
+        <odometryFrame>/odom</odometryFrame>
+        <!-- tần số xuất bản odom, tất cả đều đông bộ là 20 nên ok các phần khác không cần phải chỉnh sửa hoặc chỉnh sửa thì sửa đồng bộ  -->
+        <odometryRate>20.0</odometryRate>
+        <!-- thử chỉnh sang dùng base_footprint xem sao  -->
+        <!-- xe chuyển động tập trung chuyển động thông qua base_footprint, đỡ bị tác động hơn so với base_link -->
+        <robotBaseFrame>base_link</robotBaseFrame>
+        <publishTf>true</publishTf>
+
+        <odometrySource>1</odometrySource>
+        <publishWheelTF>false</publishWheelTF>
+        <publishWheelJointState>true</publishWheelJointState>
+        <publishOdomTF>false</publishOdomTF>
+        <!-- <publishWheelTF>true</publishWheelTF> -->
+        </plugin>
+    </gazebo>
+
+
+    <gazebo>
+        <plugin filename="libgazebo_ros_diff_drive.so" name="differential_drive_controller">
+        <legacyMode>true</legacyMode>
+        <alwaysOn>true</alwaysOn>
+        <updateRate>20</updateRate>
+        <leftJoint>front_left_wheel_joint </leftJoint>
+        <rightJoint>front_right_wheel_joint </rightJoint>
+        <!-- <leftJoint>front_left_wheel_joint</leftJoint> -->
+        <!-- <rightJoint>front_right_wheel_joint</rightJoint> -->
+        <!-- khoảng cách giữa các bánh xe -->
+        <wheelSeparation>0.6</wheelSeparation>
+        <!-- đường kính của bánh xe, sử dụng để áp dụng công thức, tuy nhiên phần này nó đang được set up cho plugin và thông số thì có vẻ chưa đúng với thực tế trong model của gazebo đâu -->
+        <wheelDiameter>0.2</wheelDiameter>
+        <!-- giói hạn lực -->
+        <wheelTorque>2</wheelTorque>
+        <!-- topic để plugin nghe lệnh điều khiến tốc độ -->
+        <commandTopic>cmd_vel</commandTopic>
+        <!-- gửi thông tin cho odom -->
+        <odometryTopic>/odom</odometryTopic>
+        <odometryFrame>/odom</odometryFrame>
+        <!-- tần số xuất bản odom, tất cả đều đông bộ là 20 nên ok các phần khác không cần phải chỉnh sửa hoặc chỉnh sửa thì sửa đồng bộ  -->
+        <odometryRate>20.0</odometryRate>
+        <!-- thử chỉnh sang dùng base_footprint xem sao  -->
+        <!-- xe chuyển động tập trung chuyển động thông qua base_footprint, đỡ bị tác động hơn so với base_link -->
+        <robotBaseFrame>base_link</robotBaseFrame>
+        <publishTf>true</publishTf>
+
+        <odometrySource>1</odometrySource>
+        <publishWheelTF>false</publishWheelTF>
+        <publishWheelJointState>true</publishWheelJointState>
+        <publishOdomTF>false</publishOdomTF>
+        <!-- <publishWheelTF>true</publishWheelTF> -->
+        </plugin>
+    </gazebo>
+
+
+
+      <!-- hokuyo -->
+    <gazebo reference="sensor_link">
+        <sensor type="ray" name="head_hokuyo_sensor">
+        <pose>0 0 0 0 0 0</pose>
+        <visualize>true</visualize>
+        <update_rate>20</update_rate>
+        <ray>
+            <scan>
+            <horizontal>
+                <samples>720</samples>
+                <resolution>1</resolution>
+                <min_angle>-1.04719755</min_angle>
+                <max_angle>1.04719755</max_angle>
+            </horizontal>
+            </scan>
+            <range>
+            <min>0.10</min>
+            <max>2.0</max>
+            <resolution>0.01</resolution>
+            </range>
+            <noise>
+            <type>gaussian</type>
+            <!-- Noise parameters based on published spec for Hokuyo laser
+                achieving "+-30mm" accuracy at range < 10m.  A mean of 0.0m and
+                stddev of 0.01m will put 99.7% of samples within 0.03m of the true
+                reading. -->
+            <mean>0.0</mean>
+            <stddev>0.01</stddev>
+            </noise>
+        </ray>
+        <!-- topic odom ở phần sử dụng cho laser tránh vật cản -->
+        <plugin name="gazebo_ros_head_hokuyo_controller" filename="libgazebo_ros_laser.so">
+            <!-- nhận từ laser về rồi cũng nhận cmd_vel thôi tuy nhiên không phải nhận thẳng -->
+            <topicName>/m2wr/laser/scan</topicName>
+            <frameName>sensor_link</frameName>
+            <odometryTopic>odom</odometryTopic>
+            <odometryFrame>odom</odometryFrame>
+            <odometryRate>20.0</odometryRate>
+        </plugin>
+        </sensor>
+    </gazebo>
+    <!-- thêm pulgin mecanum nhưng hiện tại chưa khả thi-->
+   <!-- <gazebo>
+        <plugin name="gazebo_mecanum_pid_plugin" filename="libgazebo_ros_mecanum_pid_drive.so">
+            <commandTopic>cmd_vel</commandTopic>
+            <odometryTopic>odom</odometryTopic>
+            <odometryFrame>odom</odometryFrame>
+            <robotBaseFrame>base_footprint</robotBaseFrame>
+            <LeftFront>joint_front_left_wheel</LeftFront>
+            <RightFront>joint_front_right_wheel</RightFront>
+            <odometryRate>20</odometryRate>      
+            <publishWheelTF>true</publishWheelTF>
+            <publishWheelJointState>true</publishWheelJointState>
+            <WheelTorque>100</WheelTorque>
+            <WheelSeparationW>0.5</WheelSeparationW>
+            <WheelSeparationL>0.6</WheelSeparationL>
+            <wheelAccel>5</wheelAccel>
+            <wheelDiameter>0.13</wheelDiameter>
+            <publishOdom>false</publishOdom>
+            <isRollerModel>true</isRollerModel>
+            <dt>0.05</dt>
+            <WheelInputVelTopic>zm_input_vel</WheelInputVelTopic>
+            <WheelOutputVelTopic>zm_output_vel</WheelOutputVelTopic>
+            <WheelPID>gazebo_mecanum_plugins_PID</WheelPID>
+        </plugin>
+    </gazebo> -->
+    <!-- lay tu mobile mecanum-->
+    <!-- plugin chủ yếu tạo mối nối cho các bánh xe  -->
+    <!-- <gazebo>
+        <plugin name='D455' filename='librealsense_gazebo_plugin.so'>
+        <prefix>D455</prefix>
+        <depthUpdateRate>30.0</depthUpdateRate>
+        <colorUpdateRate>30.0</colorUpdateRate>
+        <infraredUpdateRate>30.0</infraredUpdateRate>
+        <depthTopicName>depth/image_raw</depthTopicName>
+        <depthCameraInfoTopicName>depth/camera_info</depthCameraInfoTopicName>
+        <colorTopicName>color/image_raw</colorTopicName>
+        <colorCameraInfoTopicName>color/camera_info</colorCameraInfoTopicName>
+        <infrared1TopicName>infra1/image_raw</infrared1TopicName>
+        <infrared1CameraInfoTopicName>infra1/camera_info</infrared1CameraInfoTopicName>
+        <infrared2TopicName>infra2/image_raw</infrared2TopicName>
+        <infrared2CameraInfoTopicName>infra2/camera_info</infrared2CameraInfoTopicName>
+        <colorOpticalframeName>camera_color_optical_frame</colorOpticalframeName>
+        <depthOpticalframeName>camera_depth_optical_frame</depthOpticalframeName>
+        <infrared1OpticalframeName>camera_left_ir_optical_frame</infrared1OpticalframeName>
+        <infrared2OpticalframeName>camera_right_ir_optical_frame</infrared2OpticalframeName>
+        <rangeMinDepth>0.2</rangeMinDepth>
+        <rangeMaxDepth>10.0</rangeMaxDepth>
+        <pointCloud>1</pointCloud>
+        <pointCloudTopicName>depth/color/points</pointCloudTopicName>
+        <pointCloudCutoff>0.25</pointCloudCutoff>
+        <pointCloudCutoffMax>9.0</pointCloudCutoffMax>
+        </plugin>
+    </gazebo> -->
+    <!-- <gazebo>
+    <sensor type="depth" name="d455_depth_sensor">
+        <always_on>true</always_on>
+        <update_rate>30.0</update_rate>
+        <pose>0 0 0 0 0 0</pose>
+        <camera>
+        <horizontal_fov>1.047</horizontal_fov> 
+        <image>
+            <width>640</width> 
+            <height>480</height>
+            <format>R8G8B8</format> 
+        </image>
+        <clip>
+            <near>0.1</near> 
+            <far>5.0</far> 
+        </clip>
+        </camera>
+        <plugin name="depth_camera_controller" filename="libgazebo_ros_depth_camera.so">
+        <always_on>true</always_on>
+        <update_rate>30.0</update_rate>
+        <camera_name>D455_depth_camera</camera_name>
+        <frame_name>D455_camera_depth_optical_frame</frame_name>
+        <topic_name>/D455/depth/image_raw</topic_name>
+        </plugin>
+    </sensor>
+    </gazebo> -->
+
+
+</robot>

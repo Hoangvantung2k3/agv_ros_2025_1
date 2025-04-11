@@ -1,0 +1,2 @@
+set(realsense2_camera_MESSAGE_FILES "/home/tung/agv_ros_2025_1/src/4_wheel_simulation/realsense-ros/realsense2_camera/msg/IMUInfo.msg;/home/tung/agv_ros_2025_1/src/4_wheel_simulation/realsense-ros/realsense2_camera/msg/Extrinsics.msg;/home/tung/agv_ros_2025_1/src/4_wheel_simulation/realsense-ros/realsense2_camera/msg/Metadata.msg")
+set(realsense2_camera_SERVICE_FILES "/home/tung/agv_ros_2025_1/src/4_wheel_simulation/realsense-ros/realsense2_camera/srv/DeviceInfo.srv")

@@ -1,0 +1,28 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/tung/agv_ros_2025_1/devel_isolated/openslam_gmapping/include/gmapping/configfile/configfile_export.h
+
+/home/tung/agv_ros_2025_1/src/4_wheel_simulation/openslam_gmapping/configfile/configfile_test.cpp
+cstdlib
+-
+iostream
+-
+gmapping/configfile/configfile.h
+/home/tung/agv_ros_2025_1/src/4_wheel_simulation/openslam_gmapping/configfile/gmapping/configfile/configfile.h
+
+/home/tung/agv_ros_2025_1/src/4_wheel_simulation/openslam_gmapping/include/gmapping/configfile/configfile.h
+iostream
+-
+string
+-
+map
+-
+gmapping/configfile/configfile_export.h
+-
+

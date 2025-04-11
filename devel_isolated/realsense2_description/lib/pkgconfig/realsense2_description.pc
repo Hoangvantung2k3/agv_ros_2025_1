@@ -1,0 +1,8 @@
+prefix=/home/tung/agv_ros_2025_1/devel_isolated/realsense2_description
+
+Name: realsense2_description
+Description: Description of realsense2_description
+Version: 1003.4.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

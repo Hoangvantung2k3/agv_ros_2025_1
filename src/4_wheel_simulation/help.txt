@@ -1,0 +1,3 @@
+cannot run gazebo: process has died [pid 20978, exit code 255, cmd /opt/ros/melodic/lib/gazebo_ros/gzserver -e ode /home/aditya/catkin_ws/src/my_simulations/world/empty_world.world __name:=gazebo __log:=
+
+fix: killall gzserver gzclient

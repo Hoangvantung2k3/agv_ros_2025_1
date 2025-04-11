@@ -1,0 +1,379 @@
+<?xml version="1.0" ?>
+<robot name="m2wr" xmlns:xacro="https://www.ros.org/wiki/xacro" >   <!-- this second parameter is importent to make this file a valid xacro file -->
+
+<!-- in rviz red - x  | green - y | blue -z  -->
+
+<!-- while using odom tf do not forget to do   rosparam set use_sim_time true  as this gives all simulations the same time -->
+
+
+<xacro:include filename="$(find carmodel_description)/urdf/material.xacro" />
+<xacro:include filename="$(find carmodel_description)/urdf/gazebo.xacro" />
+<xacro:include filename="$(find carmodel_description)/urdf/link_joint.xacro" />
+<xacro:include filename="$(find carmodel_description)/urdf/mecanum_wheel_macro.xacro" />
+<xacro:include filename="$(find carmodel_description)/urdf/example.urdf.xacro" />
+<xacro:include filename="$(find carmodel_description)/urdf/_t265.urdf.xacro"/>
+<xacro:include filename="$(find realsense2_description)/urdf/_d455.urdf.xacro"/>
+<!-- Adding the Intel RealSense D455 camera to the bot -->
+  <xacro:sensor_d455
+      parent="base_link"                
+      name="D455_camera"           
+      use_nominal_extrinsics="true">   
+    <origin xyz="0.17 0.0 0.07" rpy="0.0 0.0 0.0"/>
+  </xacro:sensor_d455>
+  <xacro:sensor_t265  parent="base_link" name="T265_camera" topics_ns="T265_camera"
+                      odom_xyz="0.0 0 0.25" odom_rpy="0.0 0.0 0.0">
+    <origin xyz="0.13 0.0 0.14" rpy="0.0 0.0 0.0"/>
+  </xacro:sensor_t265>
+ 
+  <link name="base_link">
+    <!-- pose and inertial -->
+    <pose>0 0 0 0 0 0</pose>
+    
+    <inertial>
+      <mass value="1"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <inertia ixx="0.00750075" ixy="0" ixz="0" iyy="0.013334" iyz="0" izz="0.020833"/>
+    </inertial>
+    
+    <collision name="collision_chassis">
+      <geometry>
+        <box size="0.4 0.3 0.003"/>
+      </geometry>
+    </collision>
+    
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.4 0.3 0.003"/>
+      </geometry>
+      <material name="white"/>
+    </visual>
+  </link>
+
+  <!-- Create sensor link  -->
+  <xacro:sensor_link /> 
+  <!-- Create sensor joint --> 
+  <xacro:sensor_joint /> 
+  <xacro:mecanum_wheel name="front_right" side="1"  interface="hardware_interface/EffortJointInterface"/>
+  <xacro:mecanum_wheel name="front_left"  side="-1" interface="hardware_interface/EffortJointInterface"/>
+  <xacro:mecanum_wheel name="rear_right"  side="-1" interface="hardware_interface/EffortJointInterface"/>
+  <xacro:mecanum_wheel name="rear_left"   side="1"  interface="hardware_interface/EffortJointInterface"/>
+
+
+  <joint name="front_right_wheel_joint" type="continuous">    
+    <origin xyz="0.2 -0.19 -0.03715" rpy="0 0 ${pi/2}" />
+    <axis xyz="1 0 0" />
+    <parent link="base_link" />
+    <child link="front_right_wheel_link" />    
+  </joint>
+
+  <joint name="front_left_wheel_joint" type="continuous">
+    <origin xyz="0.2 0.19 -0.03715" rpy="0 0 ${pi/2}" />
+    <axis xyz="1 0 0" />
+    <parent link="base_link" />
+    <child link="front_left_wheel_link" />
+  </joint>
+
+  <joint name="rear_right_wheel_joint" type="continuous">
+    <origin xyz="-0.2 -0.19 -0.03715" rpy="0 0 ${pi/2}" />
+    <axis xyz="1 0 0" />
+    <parent link="base_link" />
+    <child link="rear_right_wheel_link" />
+  </joint>
+
+  <joint name="rear_left_wheel_joint" type="continuous">
+    <origin xyz="-0.2 0.19 -0.03715" rpy="0 0 ${pi/2}" />
+    <axis xyz="1 0 0" />
+    <parent link="base_link" />
+    <child link="rear_left_wheel_link" />
+  </joint>
+    <!-- Create wheel right 
+  <xacro:wheel_link name="link_right_wheel" />
+   Create joint right 
+  <xacro:joint_wheel name="joint_right_wheel" param_xyz="-0.15 0.15 0" child="link_right_wheel"  />
+  Create wheel left 
+  <xacro:wheel_link name="link_left_wheel" />
+   Create joint left 
+  <xacro:joint_wheel name="joint_left_wheel" param_xyz="-0.15 -0.15 0" child="link_left_wheel"  />
+   front left
+  <xacro:wheel_link name="link_front_left_wheel" />
+  <xacro:joint_wheel name="joint_front_left_wheel" param_xyz="0.13 -0.15 0" child="link_front_left_wheel"  />
+  front right
+  <xacro:wheel_link
+   name="link_front_right_wheel" />
+  <xacro:joint_wheel name="joint_front_right_wheel" param_xyz="0.13 0.15 0" child="link_front_right_wheel"  /> -->
+
+<!-- New Second Floor Link -->
+  <link name="second_floor">
+    <!-- pose and inertial -->
+    <pose>0 0 0 0 0 0</pose>
+    
+    <inertial>
+      <mass value="1"/> <!-- Adjust the mass of the second floor as needed -->
+      <origin rpy="0 0 0" xyz="0 0 0"/> <!-- Center of mass located above the base link -->
+      <inertia ixx="0.00750075" ixy="0" ixz="0" iyy="0.013334" iyz="0" izz="0.020833"/>
+    </inertial>
+    
+    <collision name="collision_second_floor">
+      <geometry>
+        <box size="0.4 0.3 0.003"/> <!-- Same size as the base floor -->
+      </geometry>
+    </collision>
+    
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0.0"/> <!-- 20 cm above the base link -->
+      <geometry>
+        <box size="0.4 0.3 0.003"/> <!-- Same size as the base floor -->
+      </geometry>
+      <material name="white"/>
+    </visual>
+  </link>
+
+  <!-- Joint to connect the second floor to the base link -->
+  <joint name="second_floor_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="second_floor"/>
+    <origin xyz="0 0 0.2" rpy="0 0 0"/> <!-- 20 cm between the base and second floor -->
+  </joint>
+<!-- Cylinder Connectors -->
+  <!-- Cylinder 1 -->
+  <link name="cylinder_1">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0.1" rpy="0 0 0"/> <!-- Adjust mass origin -->
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+    
+    <collision>
+      <geometry>
+        <cylinder radius="0.01" length="0.2"/> <!-- Adjust cylinder dimensions -->
+      </geometry>
+    </collision>
+    
+    <visual>
+      <geometry>
+        <cylinder radius="0.01" length="0.2"/> <!-- Adjust cylinder dimensions -->
+      </geometry>
+      <material name="gray"/>
+    </visual>
+  </link>
+
+  <joint name="cylinder_1_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="cylinder_1"/>
+    <origin xyz="0.18 0.11 0.1" rpy="0 0 0"/> <!-- Position relative to base_link -->
+  </joint>
+
+  <!-- Cylinder 2 -->
+  <link name="cylinder_2">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+    
+    <collision>
+      <geometry>
+        <cylinder radius="0.01" length="0.2"/>
+      </geometry>
+    </collision>
+    
+    <visual>
+      <geometry>
+        <cylinder radius="0.01" length="0.2"/>
+      </geometry>
+      <material name="gray"/>
+    </visual>
+  </link>
+
+  <joint name="cylinder_2_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="cylinder_2"/>
+    <origin xyz="0.18 -0.11 0.1" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Cylinder 3 -->
+  <link name="cylinder_3">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+    
+    <collision>
+      <geometry>
+        <cylinder radius="0.01" length="0.2"/>
+      </geometry>
+    </collision>
+    
+    <visual>
+      <geometry>
+        <cylinder radius="0.01" length="0.2"/>
+      </geometry>
+      <material name="gray"/>
+    </visual>
+  </link>
+
+  <joint name="cylinder_3_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="cylinder_3"/>
+    <origin xyz="-0.18 0.11 0.1" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Cylinder 4 -->
+  <link name="cylinder_4">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+    
+    <collision>
+      <geometry>
+        <cylinder radius="0.01" length="0.2"/>
+      </geometry>
+    </collision>
+    
+    <visual>
+      <geometry>
+        <cylinder radius="0.01" length="0.2"/>
+      </geometry>
+      <material name="gray"/>
+    </visual>
+  </link>
+
+  <joint name="cylinder_4_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="cylinder_4"/>
+    <origin xyz="-0.18 -0.11 0.1" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Four Cylindrical Motors at the Edges of the Downer Side of Base Link -->
+  <!-- Motor 1 (Front Right) -->
+  <link name="motor_1">
+    <inertial>
+      <mass value="0.2"/>
+      <origin xyz="0.2 -0.13 -0.02" rpy="0 0 0"/> <!-- Adjust position -->
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+    <collision>
+      <geometry>
+        <cylinder radius="0.0175" length="0.057"/> <!-- Cylinder with diameter 35mm and length 57mm -->
+      </geometry>
+    </collision>
+    <visual>
+      <geometry>
+        <cylinder radius="0.0175" length="0.057"/> <!-- Same dimensions as the collision cylinder -->
+      </geometry>
+      <material name="gray"/>
+    </visual>
+  </link>
+  <joint name="motor_1_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="motor_1"/>
+    <origin xyz="0.2 -0.13 -0.02" rpy="1.5708 0 0"/> <!-- Place the motor at the lower side of the base -->
+  </joint>
+
+  <!-- Motor 2 (Front Left) -->
+  <link name="motor_2">
+    <inertial>
+      <mass value="0.2"/>
+      <origin xyz="0.2 0.13 -0.02" rpy="0 0 0"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+    <collision>
+      <geometry>
+        <cylinder radius="0.0175" length="0.057"/> <!-- Cylinder with diameter 35mm and length 57mm -->
+      </geometry>
+    </collision>
+    <visual>
+      <geometry>
+        <cylinder radius="0.0175" length="0.057"/>
+      </geometry>
+      <material name="gray"/>
+    </visual>
+  </link>
+  <joint name="motor_2_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="motor_2"/>
+    <origin xyz="0.2 0.13 -0.02" rpy="1.5708 0 0"/> <!-- Place the motor at the lower side of the base -->
+  </joint>
+
+  <!-- Motor 3 (Rear Right) -->
+  <link name="motor_3">
+    <inertial>
+      <mass value="0.2"/>
+      <origin xyz="-0.2 -0.13 -0.02" rpy="0 0 0"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+    <collision>
+      <geometry>
+        <cylinder radius="0.0175" length="0.057"/> <!-- Cylinder with diameter 35mm and length 57mm -->
+      </geometry>
+    </collision>
+    <visual>
+      <geometry>
+        <cylinder radius="0.0175" length="0.057"/>
+      </geometry>
+      <material name="gray"/>
+    </visual>
+  </link>
+  <joint name="motor_3_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="motor_3"/>
+    <origin xyz="-0.2 -0.13 -0.02" rpy="1.5708 0 0"/> <!-- Place the motor at the lower side of the base -->
+  </joint>
+
+  <!-- Motor 4 (Rear Left) -->
+  <link name="motor_4">
+    <inertial>
+      <mass value="0.2"/>
+      <origin xyz="-0.2 0.13 -0.02" rpy="0 0 0"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+    <collision>
+      <geometry>
+        <cylinder radius="0.0175" length="0.057"/> <!-- Cylinder with diameter 35mm and length 57mm -->
+      </geometry>
+    </collision>
+    <visual>
+      <geometry>
+        <cylinder radius="0.0175" length="0.057"/>
+      </geometry>
+      <material name="gray"/>
+    </visual>
+  </link>
+  <joint name="motor_4_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="motor_4"/>
+    <origin xyz="-0.2 0.13 -0.02" rpy="1.5708 0 0"/> <!-- Place the motor at the lower side of the base -->
+  </joint>
+
+<!-- Battery link (Rectangle Box under the Second Floor) -->
+<link name="battery">
+  <inertial>
+    <mass value="2.0"/> <!-- Adjust battery mass as necessary -->
+    <origin xyz="0 0 0.0" rpy="0 0 0"/> <!-- Center of mass slightly under the second floor -->
+    <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+  </inertial>
+  <collision>
+    <geometry>
+      <box size="0.20 0.09 0.06"/> <!-- Width=20 cm, Length=9 cm, Height=6 cm -->
+    </geometry>
+  </collision>
+  <visual>
+    <geometry>
+      <box size="0.09 0.20 0.06"/>
+    </geometry>
+    <material name="red"/> <!-- You can change the material color as needed -->
+  </visual>
+</link>
+
+<!-- Joint to attach battery under the second floor -->
+<joint name="battery_joint" type="fixed">
+  <parent link="second_floor"/>
+  <child link="battery"/>
+  <origin xyz="0 0 -0.03" rpy="0 0 0"/> <!-- Positioned under the second floor -->
+</joint>
+
+</robot>
