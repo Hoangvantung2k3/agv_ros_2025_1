@@ -123,3 +123,10 @@ Thay đổi cách đánh giá score trong assessUnknownRegion(). -> có thể th
 Giới hạn số lượng viewpoint trong purgeViewpoint().
 
 .............Sử dụng thuật toán khác để chọn viewpoint tốt hơn....... -->
+
+
+
+
+
+
+
