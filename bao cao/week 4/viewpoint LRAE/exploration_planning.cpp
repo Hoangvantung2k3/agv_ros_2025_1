@@ -40,7 +40,128 @@ ExplorationPlanning::~ExplorationPlanning()
         delete cal_cost_planner_;
     }
 }
+ExplorationPlanning::ExplorationPlanning() {
+    // Khởi tạo các biến hiện có
+    unknown_num_thre_ = 80.0;
+    angle_pen_ = 0.45;
+    minrange_ = 20.0;
+    // ... (các khởi tạo khác)
 
+    // Khởi tạo các biến mới
+    map_density_ = 0.0;
+    avg_centroid_distance_ = 0.0;
+    unknown_boundary_ratio_ = 0.0;
+    obstacle_threshold_ = 50.0; // Ngưỡng occupancy để coi là ô bị chiếm dụng
+    boundary_threshold_ = 3.0;  // Ngưỡng count_thre để xác định ô gần ranh giới
+
+    // ... (các thiết lập khác như subscriber, timer, v.v.)
+}
+void ExplorationPlanning::calculateMapDensity() {
+    if (global_map_.data.empty()) {
+        map_density_ = 0.0;
+        return;
+    }
+
+    int occupied_count = 0;
+    int total_count = 0;
+
+    for (int i = 0; i < global_map_.data.size(); i++) {
+        if (global_map_.data[i] >= 0) { // Bỏ qua ô chưa biết (-1)
+            total_count++;
+            if (global_map_.data[i] >= obstacle_threshold_) {
+                occupied_count++;
+            }
+        }
+    }
+
+    map_density_ = total_count > 0 ? static_cast<float>(occupied_count) / total_count : 0.0;
+}
+void ExplorationPlanning::calculateAvgCentroidDistance() {
+    if (CandiCentroidPair.empty()) { // CandiCentroidPair là danh sách centroids
+        avg_centroid_distance_ = 0.0;
+        return;
+    }
+
+    float total_distance = 0.0;
+    int count = 0;
+
+    for (const auto& centroid_pair : CandiCentroidPair) {
+        // Lấy tọa độ centroid trong không gian liên tục (world coordinates)
+        float cx = centroid_pair.centroidone.positionX * global_map_.info.resolution + global_map_.info.origin.position.x;
+        float cy = centroid_pair.centroidone.positionY * global_map_.info.resolution + global_map_.info.origin.position.y;
+        float rx = robot_pose_.position.x;
+        float ry = robot_pose_.position.y;
+
+        float distance = sqrt(pow(cx - rx, 2) + pow(cy - ry, 2));
+        total_distance += distance;
+        count++;
+
+        // Lặp lại cho centroidtwo nếu cần
+        cx = centroid_pair.centroidtwo.positionX * global_map_.info.resolution + global_map_.info.origin.position.x;
+        cy = centroid_pair.centroidtwo.positionY * global_map_.info.resolution + global_map_.info.origin.position.y;
+        distance = sqrt(pow(cx - rx, 2) + pow(cy - ry, 2));
+        total_distance += distance;
+        count++;
+    }
+
+    avg_centroid_distance_ = count > 0 ? total_distance / count : 0.0;
+}
+void ExplorationPlanning::calculateUnknownBoundaryRatio() {
+    if (global_map_.data.empty()) {
+        unknown_boundary_ratio_ = 0.0;
+        return;
+    }
+
+    int unknown_count = 0;
+    int boundary_count = 0;
+
+    for (int y = 0; y < global_map_.info.height; y++) {
+        for (int x = 0; x < global_map_.info.width; x++) {
+            int index = x + y * global_map_.info.width;
+            if (global_map_.data[index] == -1) { // Ô chưa biết
+                unknown_count++;
+                // Kiểm tra ô lân cận (tương tự getCentroidHelper)
+                int count_thre = 0;
+                for (int k = 0; k < 8; k++) {
+                    int nx = x + d_x8[k];
+                    int ny = y + d_y8[k];
+                    int nindex = nx + ny * global_map_.info.width;
+                    if (nx >= 0 && nx < global_map_.info.width && ny >= 0 && ny < global_map_.info.height) {
+                        if (global_map_.data[nindex] >= 0 && global_map_.data[nindex] < obstacle_threshold_) {
+                            count_thre++;
+                        }
+                    }
+                }
+                if (count_thre == boundary_threshold_ || count_thre == boundary_threshold_ + 1) {
+                    boundary_count++;
+                }
+            }
+        }
+    }
+
+    unknown_boundary_ratio_ = unknown_count > 0 ? static_cast<float>(boundary_count) / unknown_count : 0.0;
+}
+float ExplorationPlanning::calculateWeightPathCost(float map_density, float avg_centroid_distance) {
+    // Tăng trọng số nếu môi trường thưa thớt hoặc centroids xa
+    float base_weight = 1.0;
+    float density_factor = (1.0 - map_density); // Thưa thớt -> tăng trọng số
+    float distance_factor = avg_centroid_distance / 20.0; // Chuẩn hóa với ngưỡng 20m
+    return base_weight + 0.5 * density_factor + 0.5 * distance_factor;
+}
+
+float ExplorationPlanning::calculateWeightTraverDegree(float map_density) {
+    // Tăng trọng số nếu môi trường đông đúc
+    float base_weight = 1.0;
+    float density_factor = map_density; // Đông đúc -> tăng trọng số
+    return base_weight + 1.0 * density_factor;
+}
+
+float ExplorationPlanning::calculateWeightDisgridnum(float unknown_boundary_ratio) {
+    // Tăng trọng số nếu có nhiều ranh giới phức tạp
+    float base_weight = 1.0;
+    float boundary_factor = unknown_boundary_ratio; // Nhiều ranh giới -> tăng trọng số
+    return base_weight + 0.5 * boundary_factor;
+}
 bool ExplorationPlanning::initialize()
 {
     min_left_index_.x = 10000;

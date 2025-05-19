@@ -82,6 +82,16 @@ public:
     ExplorationPlanning(ros::NodeHandle& nh, ros::NodeHandle& nh_p);
     bool initialize();
     ~ExplorationPlanning();
+    /////////////////// Thêm các hàm để tính toán thông số
+    void calculateMapDensity();
+    void calculateAvgCentroidDistance();
+    void calculateUnknownBoundaryRatio();
+    
+    /////////////////// Hàm để tính trọng số (Contribution 1)
+    float calculateWeightPathCost(float map_density, float avg_centroid_distance);
+    float calculateWeightTraverDegree(float map_density);
+    float calculateWeightDisgridnum(float unknown_boundary_ratio);
+
     ros::NodeHandle nh_;
     geometry_msgs::Point ego_position_;
 private:
@@ -153,6 +163,13 @@ private:
     bool use_go_end_nearest_ = true;
     double end_neacen_disthre_ = 10.0; 
     double end_cur_disrate_ = 2.0; 
+    // bien moi////////////////////////////////////////////////////
+    float map_density_;
+    float avg_centroid_distance_;
+    float unknown_boundary_ratio_;
+    float obstacle_threshold_;       // Ngưỡng để xác định ô bị chiếm dụng (mặc định 50)
+    float boundary_threshold_;      // Ngưỡng để xác định ô gần ranh giới (mặc định 3 hoặc 4 như getCentroidHelper)
+    
 
     PlannerInterface* cal_cost_planner_;
 
