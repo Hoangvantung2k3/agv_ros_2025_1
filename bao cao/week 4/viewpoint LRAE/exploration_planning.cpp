@@ -740,13 +740,21 @@ bool ExplorationPlanning::assessUnknownRegion(Centroid* choosecentroid)
     float s_1;
     float s_2;
     float s_3;
+    calculateMapDensity();
+    calculateAvgCentroidDistance();
+    calculateUnknownBoundaryRatio();
+    // Tính trọng số
+    float w_1 = calculateWeightPathCost(map_density_, avg_centroid_distance_);
+    float w_2 = calculateWeightTraverDegree(map_density_);
+    float w_3 = calculateWeightDisgridnum(unknown_boundary_ratio_);
+
     choosecentroid->evaluated_viewpoints.clear();
     for(int j = 0; j < choosecentroid->viewpoint_fin.size(); j++)
     {
         s_1 = max_rvpathcost > 0 ? float(choosecentroid->viewpoint_fin[j].rv_path_cost / max_rvpathcost) : 0;
         s_2 = max_traver_degree > 0 ? float(choosecentroid->viewpoint_fin[j].traver_degree / max_traver_degree) : 0;
         s_3 = max_disgridnum > 0 ? float(choosecentroid->viewpoint_fin[j].disgridnum / max_disgridnum) : 0;
-        choosecentroid->viewpoint_fin[j].score = 1 * s_1 + s_2 + s_3;
+        choosecentroid->viewpoint_fin[j].score = w_1 * s_1 + w_2 * s_2 + w_3 * s_3;
         choosecentroid->evaluated_viewpoints.insert(make_pair(choosecentroid->viewpoint_fin[j].score, &choosecentroid->viewpoint_fin[j]));
     }
     if(choosecentroid->viewpoint_fin.empty())
