@@ -24,7 +24,6 @@ ExplorationPlanning::ExplorationPlanning(ros::NodeHandle& nh, ros::NodeHandle& n
     : has_robot_position_(false),
       has_map_(false),
       has_tra_map_(false),
-      // [THÊM] Khởi tạo trọng số và cờ cập nhật bản đồ
       weight_path_cost_(1.0 / 3.0),
       weight_traver_degree_(1.0 / 3.0),
       weight_disgridnum_(1.0 / 3.0),
@@ -33,7 +32,6 @@ ExplorationPlanning::ExplorationPlanning(ros::NodeHandle& nh, ros::NodeHandle& n
     nh_p_ = nh_p;
     ns_ = ros::this_node::getName();
     cal_cost_planner_ = new GraphSearch();
-    // [THÊM] Khởi tạo các biến metric
     map_density_ = 0.0;
     avg_centroid_distance_ = 0.0;
     unknown_boundary_ratio_ = 0.0;
@@ -49,11 +47,9 @@ ExplorationPlanning::~ExplorationPlanning() {
 }
 
 ExplorationPlanning::ExplorationPlanning() {
-    // Khởi tạo các biến hiện có
     unknown_num_thre_ = 80.0;
     angle_pen_ = 0.45;
     minrange_ = 20.0;
-    // [THÊM] Khởi tạo các biến mới
     map_density_ = 0.0;
     avg_centroid_distance_ = 0.0;
     unknown_boundary_ratio_ = 0.0;
@@ -87,7 +83,6 @@ void ExplorationPlanning::calculateMapDensity() {
 }
 
 void ExplorationPlanning::calculateAvgCentroidDistance() {
-    // [SỬA] Sử dụng first_two_cen_ thay vì CandiCentroidPair
     avg_centroid_distance_ = 0.0;
     if (!has_robot_position_ || !has_map_) {
         return;
@@ -96,7 +91,6 @@ void ExplorationPlanning::calculateAvgCentroidDistance() {
     float total_distance = 0.0;
     int count = 0;
 
-    // Tính khoảng cách từ robot đến centroidone
     float cx = first_two_cen_.centroidone.positionX * global_map_.info.resolution + global_map_.info.origin.position.x;
     float cy = first_two_cen_.centroidone.positionY * global_map_.info.resolution + global_map_.info.origin.position.y;
     float rx = robot_pose_.position.x;
@@ -105,7 +99,6 @@ void ExplorationPlanning::calculateAvgCentroidDistance() {
     total_distance += distance;
     count++;
 
-    // Tính khoảng cách đến centroidtwo nếu khác centroidone
     if (first_two_cen_.centroidone.cenindex.x != first_two_cen_.centroidtwo.cenindex.x ||
         first_two_cen_.centroidone.cenindex.y != first_two_cen_.centroidtwo.cenindex.y) {
         cx = first_two_cen_.centroidtwo.positionX * global_map_.info.resolution + global_map_.info.origin.position.x;
@@ -317,7 +310,6 @@ void ExplorationPlanning::traversibilityMapCallback(const nav_msgs::OccupancyGri
 }
 
 void ExplorationPlanning::globalMapCallback(const nav_msgs::OccupancyGrid::ConstPtr& msg) {
-    // [SỬA] Kiểm tra thay đổi bản đồ để đặt cờ map_updated_
     if (!global_map_.data.empty() && global_map_.data.size() == msg->data.size()) {
         int diff_count = 0;
         for (size_t i = 0; i < msg->data.size(); ++i) {
@@ -325,7 +317,7 @@ void ExplorationPlanning::globalMapCallback(const nav_msgs::OccupancyGrid::Const
                 diff_count++;
             }
         }
-        map_updated_ = (diff_count > msg->data.size() * 0.01); // Coi là thay đổi nếu >1% ô khác
+        map_updated_ = (diff_count > msg->data.size() * 0.01);
     } else {
         map_updated_ = true;
     }
@@ -606,7 +598,6 @@ bool ExplorationPlanning::getCentroidHelper(const int ori_x, const int& ori_y, c
 }
 
 bool ExplorationPlanning::assessUnknownRegion(Centroid* choosecentroid) {
-    // [SỬA] Sử dụng trọng số từ biến thành viên, bỏ tính toán metric trong hàm
     utils_ns::Index2 startpoint = choosecentroid->cenindex;
     int max_traver_degree = 0;
     int max_disgridnum = 0;
@@ -691,47 +682,41 @@ void ExplorationPlanning::purgeViewpoint(std::vector<utils_ns::ViewPoint>& purge
 }
 
 void ExplorationPlanning::execute(const ros::TimerEvent&) {
-    // [SỬA] Tối ưu hóa tính toán metric và trọng số, tích hợp với assessUnknownRegion
-    bool pub_rviz = false;
-    bool flag1 = false;
+    // [SỬA] Tối ưu hóa logic, loại bỏ dư thừa, giữ nguyên thông số
+    auto begin_time = std::chrono::system_clock::now();
 
+    // Kiểm tra trạng thái về nhà
     if (go_home_count_ > 20) {
         go_home_ = true;
-    }
-    if (go_home_) {
-        ROS_INFO("There are almost no explorable unknown regions!");
+        ROS_INFO("No more explorable regions, returning home!");
         return;
     }
 
+    // Cập nhật cửa sổ khám phá
     if (has_tra_map_ && has_map_) {
         ExactWindow_.oriindx = CONTXY2DISC(traversibility_map_.info.origin.position.x - ori_x_, resolution_) + 3;
         ExactWindow_.oriindy = CONTXY2DISC(traversibility_map_.info.origin.position.y - ori_y_, resolution_) + 3;
         ExactWindow_.winwithd = traversibility_map_.info.width - 3;
         ExactWindow_.winheight = traversibility_map_.info.height - 3;
-        if (min_left_index_.x > ExactWindow_.oriindx)
-            min_left_index_.x = ExactWindow_.oriindx;
-        if (min_left_index_.y > ExactWindow_.oriindy)
-            min_left_index_.y = ExactWindow_.oriindy;
-        if (max_right_index_.x < ExactWindow_.oriindx + ExactWindow_.winwithd)
-            max_right_index_.x = ExactWindow_.oriindx + ExactWindow_.winwithd;
-        if (max_right_index_.y < ExactWindow_.oriindy + ExactWindow_.winheight)
-            max_right_index_.y = ExactWindow_.oriindy + ExactWindow_.winheight;
+        min_left_index_.x = std::min(min_left_index_.x, ExactWindow_.oriindx);
+        min_left_index_.y = std::min(min_left_index_.y, ExactWindow_.oriindy);
+        max_right_index_.x = std::max(max_right_index_.x, ExactWindow_.oriindx + ExactWindow_.winwithd);
+        max_right_index_.y = std::max(max_right_index_.y, ExactWindow_.oriindy + ExactWindow_.winheight);
     }
 
+    // Lấy vị trí robot
     getRobotPosition();
-
     if (!has_map_ || !has_robot_position_) {
+        ROS_WARN("Missing map or robot position, skipping execution.");
         return;
     }
 
-    auto begin_time = std::chrono::system_clock::now();
-
+    // Cập nhật centroid nếu cần
     update_cen_count_++;
     if (map_updated_ || update_cen_count_ % update_cen_thre_ == 0 || !findCenIs_) {
         findCenIs_ = getCentroid(ExactWindow_);
         if (!findCenIs_) {
-            ROS_INFO("The current window has no centroid, expand the exploration window size.");
-            flag1 = true;
+            ROS_INFO("No centroids in current window, expanding exploration window.");
             ExactWindow_.oriindx = min_left_index_.x;
             ExactWindow_.oriindy = min_left_index_.y;
             ExactWindow_.winwithd = max_right_index_.x - min_left_index_.x;
@@ -741,11 +726,26 @@ void ExplorationPlanning::execute(const ros::TimerEvent&) {
         map_updated_ = false;
     }
 
+    // Lưu trữ centroid nếu tìm thấy
+    if (findCenIs_ && !centroids_.empty()) {
+        pushcen_++;
+        if (pushcen_ % 10 == 0 && !last_centroids_.empty()) {
+            for (const auto& cen : last_centroids_) {
+                if (global_map_.data[cen.cenindex.x + cen.cenindex.y * global_map_.info.width] == -1) {
+                    all_outwin_centroids_.push_back(cen);
+                }
+            }
+        }
+        last_centroids_ = centroids_;
+        last_ex_state_.findCenis = true;
+        last_ex_state_.findNearCenPathis = false;
+    }
+
+    // Tính toán metric và trọng số nếu có centroid
     if (findCenIs_ && !centroids_.empty()) {
         calculateMapDensity();
         calculateAvgCentroidDistance();
         calculateUnknownBoundaryRatio();
-
         weight_path_cost_ = calculateWeightPathCost(map_density_, avg_centroid_distance_);
         weight_traver_degree_ = calculateWeightTraverDegree(map_density_);
         weight_disgridnum_ = calculateWeightDisgridnum(unknown_boundary_ratio_);
@@ -759,173 +759,119 @@ void ExplorationPlanning::execute(const ros::TimerEvent&) {
         }
     }
 
-    if (findCenIs_) {
-        flag1 = false;
-        pushcen_++;
-        if (!last_centroids_.empty() && pushcen_ % 10 == 0) {
-            for (int i = 0; i < last_centroids_.size(); i++) {
-                if (global_map_.data[last_centroids_[i].cenindex.x + last_centroids_[i].cenindex.y * global_map_.info.width] == -1) {
-                    all_outwin_centroids_.push_back(last_centroids_[i]);
-                }
+    // Xử lý khi không tìm thấy centroid
+    if (!findCenIs_ && !all_outwin_centroids_.empty()) {
+        double min_rc_cost = 10000.0;
+        int record_index_cen = -1;
+        std::vector<utils_ns::PointInt> min_dis_path;
+        nav_msgs::Path exporation_path;
+
+        for (int j = 0; j < all_outwin_centroids_.size(); j++) {
+            const auto& cur_cen = all_outwin_centroids_[j];
+            if (abs(ego_position_.x - cur_cen.centroidposition.x) < minrange_ &&
+                abs(ego_position_.y - cur_cen.centroidposition.y) < minrange_) {
+                continue;
             }
-            last_centroids_.clear();
-            last_centroids_ = centroids_;
-        } else if (last_centroids_.empty()) {
-            last_centroids_ = centroids_;
+            if (global_map_.data[cur_cen.cenindex.x + cur_cen.cenindex.y * global_map_.info.width] != -1) {
+                continue;
+            }
+
+            utils_ns::Index2 startR, endC;
+            startR.x = CONTXY2DISC(ego_position_.x - global_map_.info.origin.position.x, global_map_.info.resolution);
+            startR.y = CONTXY2DISC(ego_position_.y - global_map_.info.origin.position.y, global_map_.info.resolution);
+            endC.x = CONTXY2DISC(cur_cen.centroidposition.x - global_map_.info.origin.position.x, global_map_.info.resolution);
+            endC.y = CONTXY2DISC(cur_cen.centroidposition.y - global_map_.info.resolution);
+            int pathcostRC;
+            std::vector<utils_ns::PointInt> tmppath;
+            cal_cost_planner_->SearchforNearCen(startR.x, startR.y, endC.x, endC.y, global_map_,
+                                                global_map_.info.width, global_map_.info.height, 95, pathcostRC, tmppath);
+            double pathdisRC = (double)(pathcostRC) / 10.0 * global_map_.info.resolution;
+            if (min_rc_cost > pathdisRC) {
+                min_rc_cost = pathdisRC;
+                record_index_cen = j;
+                min_dis_path = tmppath;
+            }
         }
-        last_ex_state_.findCenis = true;
-        last_ex_state_.findNearCenPathis = false;
-    } else {
-        if (all_outwin_centroids_.empty()) {
-            ROS_WARN("There are almost no explorable unknown regions!");
-            go_home_count_++;
-        } else {
-            double min_rc_cost = 10000.0;
-            int record_index_cen = -1;
-            std::vector<utils_ns::PointInt> min_dis_path;
-            nav_msgs::Path exporation_path;
 
-            if (last_ex_state_.findCenis == false && last_ex_state_.findNearCenPathis == true &&
-                global_map_.data[last_near_cen_.cenindex.x + last_near_cen_.cenindex.y * width_] < 95 &&
-                (abs(ego_position_.x - last_near_cen_.centroidposition.x) > 10 ||
-                 abs(ego_position_.y - last_near_cen_.centroidposition.y) > 10)) {
-                utils_ns::Index2 startR, endC;
-                startR.x = CONTXY2DISC(ego_position_.x - global_map_.info.origin.position.x, global_map_.info.resolution);
-                startR.y = CONTXY2DISC(ego_position_.y - global_map_.info.origin.position.y, global_map_.info.resolution);
-                endC.x = CONTXY2DISC(last_near_cen_.centroidposition.x - global_map_.info.origin.position.x, global_map_.info.resolution);
-                endC.y = CONTXY2DISC(last_near_cen_.centroidposition.y - global_map_.info.resolution);
-                int pathcostRC;
-                std::vector<utils_ns::PointInt> tmppath;
-                cal_cost_planner_->SearchforNearCen(startR.x, startR.y, endC.x, endC.y, global_map_,
-                                                    global_map_.info.width, global_map_.info.height, 95, pathcostRC, tmppath);
+        if (record_index_cen != -1) {
+            const auto& min_dis_centroid = all_outwin_centroids_[record_index_cen];
+            choose_centroids_marker_->marker_.points.clear();
+            choose_centroids_marker_->marker_.points.push_back(min_dis_centroid.centroidposition);
+            choose_centroids_marker_->Publish();
 
-                exporation_path.header.frame_id = "map";
-                exporation_path.header.stamp = ros::Time::now();
-                exporation_path.poses.resize(tmppath.size());
-                for (int i = 0; i < (int)tmppath.size(); i++) {
-                    if (height_ > tmppath[i].y && tmppath[i].y >= 0 && width_ > tmppath[i].x && tmppath[i].x >= 0) {
-                        double x = DISCXY2CONT(tmppath[i].x, resolution_) + ori_x_;
-                        double y = DISCXY2CONT(tmppath[i].y, resolution_) + ori_y_;
-                        exporation_path.poses[i].pose.position.x = x;
-                        exporation_path.poses[i].pose.position.y = y;
-                        if (i + 1 < (int)tmppath.size()) {
-                            double nx = DISCXY2CONT(tmppath[i + 1].x, resolution_) + ori_x_;
-                            double ny = DISCXY2CONT(tmppath[i + 1].y, resolution_) + ori_y_;
-                            exporation_path.poses[i].pose.orientation.w = atan2((ny - y), (nx - x));
-                        } else {
-                            exporation_path.poses[i].pose.orientation.w = exporation_path.poses[i - 1].pose.orientation.w;
-                        }
-                    }
-                }
-            } else {
-                for (int j = 0; j < all_outwin_centroids_.size(); j++) {
-                    auto cur_cen = all_outwin_centroids_[j];
-                    if (abs(ego_position_.x - cur_cen.centroidposition.x) < minrange_ &&
-                        abs(ego_position_.y - cur_cen.centroidposition.y) < minrange_) {
-                        continue;
-                    }
-                    if (global_map_.data[cur_cen.cenindex.x + cur_cen.cenindex.y * global_map_.info.width] != -1) {
-                        continue;
-                    }
-
-                    utils_ns::Index2 startR, endC;
-                    startR.x = CONTXY2DISC(ego_position_.x - global_map_.info.origin.position.x, global_map_.info.resolution);
-                    startR.y = CONTXY2DISC(ego_position_.y - global_map_.info.origin.position.y, global_map_.info.resolution);
-                    endC.x = CONTXY2DISC(all_outwin_centroids_[j].centroidposition.x - global_map_.info.origin.position.x, global_map_.info.resolution);
-                    endC.y = CONTXY2DISC(all_outwin_centroids_[j].centroidposition.y - global_map_.info.resolution);
-                    int pathcostRC;
-                    std::vector<utils_ns::PointInt> tmppath;
-                    cal_cost_planner_->SearchforNearCen(startR.x, startR.y, endC.x, endC.y, global_map_,
-                                                        global_map_.info.width, global_map_.info.height, 95, pathcostRC, tmppath);
-                    double pathdisRC = (double)(pathcostRC) / 10.0 * global_map_.info.resolution;
-                    if (min_rc_cost > pathdisRC) {
-                        min_rc_cost = pathdisRC;
-                        record_index_cen = j;
-                        min_dis_path = tmppath;
-                    }
-                }
-                if (record_index_cen != -1) {
-                    Centroid min_dis_centroid = all_outwin_centroids_[record_index_cen];
-
-                    choose_centroids_marker_->marker_.points.clear();
-                    choose_centroids_marker_->marker_.points.push_back(min_dis_centroid.centroidposition);
-                    choose_centroids_marker_->Publish();
-
-                    exporation_path.header.frame_id = "map";
-                    exporation_path.header.stamp = ros::Time::now();
-                    exporation_path.poses.resize(min_dis_path.size());
-                    for (int i = 0; i < (int)min_dis_path.size(); i++) {
-                        if (height_ > min_dis_path[i].y && min_dis_path[i].y >= 0 && width_ > min_dis_path[i].x && min_dis_path[i].x >= 0) {
-                            double x = DISCXY2CONT(min_dis_path[i].x, resolution_) + ori_x_;
-                            double y = DISCXY2CONT(min_dis_path[i].y, resolution_) + ori_y_;
-                            exporation_path.poses[i].pose.position.x = x;
-                            exporation_path.poses[i].pose.position.y = y;
-                            if (i + 1 < (int)min_dis_path.size()) {
-                                double nx = DISCXY2CONT(min_dis_path[i + 1].x, resolution_) + ori_x_;
-                                double ny = DISCXY2CONT(min_dis_path[i + 1].y, resolution_) + ori_y_;
-                                exporation_path.poses[i].pose.orientation.w = atan2((ny - y), (nx - x));
-                            } else {
-                                exporation_path.poses[i].pose.orientation.w = exporation_path.poses[i - 1].pose.orientation.w;
-                            }
-                        }
-                    }
-                    if (exporation_path.poses.size() >= 2) {
-                        last_ex_state_.findCenis = false;
-                        last_ex_state_.findNearCenPathis = true;
-                        last_near_cen_ = min_dis_centroid;
+            exporation_path.header.frame_id = "map";
+            exporation_path.header.stamp = ros::Time::now();
+            exporation_path.poses.resize(min_dis_path.size());
+            for (int i = 0; i < min_dis_path.size(); i++) {
+                if (height_ > min_dis_path[i].y && min_dis_path[i].y >= 0 && width_ > min_dis_path[i].x && min_dis_path[i].x >= 0) {
+                    double x = DISCXY2CONT(min_dis_path[i].x, resolution_) + ori_x_;
+                    double y = DISCXY2CONT(min_dis_path[i].y, resolution_) + ori_y_;
+                    exporation_path.poses[i].pose.position.x = x;
+                    exporation_path.poses[i].pose.position.y = y;
+                    if (i + 1 < min_dis_path.size()) {
+                        double nx = DISCXY2CONT(min_dis_path[i + 1].x, resolution_) + ori_x_;
+                        double ny = DISCXY2CONT(min_dis_path[i + 1].y, resolution_) + ori_y_;
+                        exporation_path.poses[i].pose.orientation.w = atan2((ny - y), (nx - x));
+                    } else {
+                        exporation_path.poses[i].pose.orientation.w = exporation_path.poses[i - 1].pose.orientation.w;
                     }
                 }
             }
+
             if (exporation_path.poses.size() >= 2) {
                 exploration_path_pub_.publish(exporation_path);
-                ROS_INFO("Exploring nearby centroid...");
-                flag1 = false;
+                last_ex_state_.findCenis = false;
+                last_ex_state_.findNearCenPathis = true;
+                last_near_cen_ = min_dis_centroid;
+                ROS_INFO("Exploring nearby centroid at (%f, %f).",
+                         min_dis_centroid.centroidposition.x, min_dis_centroid.centroidposition.y);
                 go_home_count_ = 0;
             } else {
-                ROS_WARN("There are almost no explorable unknown regions.");
                 go_home_count_++;
+                ROS_WARN("No valid path to nearby centroid.");
             }
+        } else {
+            go_home_count_++;
+            ROS_WARN("No explorable centroids in out-of-window list.");
         }
+        return;
     }
 
-    if (centroids_.size() > 0 && findCenIs_) {
-        CandiCentroidPair target_centroid_pairs;
-        int findnCen = 0;
-
-        std::vector<int> orders;
-        if (centroids_.size() < 2) {
-            orders.push_back(0);
-            orders.push_back(1);
-        } else {
-            orders = getRouteOrder();
+    // Xử lý khi tìm thấy centroid
+    if (findCenIs_ && !centroids_.empty()) {
+        std::vector<int> orders = getRouteOrder();
+        if (orders.size() <= 1) {
+            ROS_WARN("No valid route order for centroids.");
+            go_home_count_++;
+            return;
         }
 
-        if (orders.size() <= 1) {
-            ROS_INFO("DEBUG: No route order!");
-        } else {
-            nav_msgs::Path route_path;
-            route_path.header.frame_id = "map";
-            geometry_msgs::PoseStamped ep;
-            ep.pose.position = ego_position_;
-            route_path.poses.push_back(ep);
-            for (int i = 1; i < orders.size(); i++) {
-                geometry_msgs::PoseStamped cp;
-                cp.pose.position = centroids_[orders[i] - 1].centroidposition;
-                route_path.poses.push_back(cp);
-            }
-            exploration_route_pub_.publish(route_path);
+        // Xuất bản route path
+        nav_msgs::Path route_path;
+        route_path.header.frame_id = "map";
+        route_path.header.stamp = ros::Time::now();
+        geometry_msgs::PoseStamped ep;
+        ep.pose.position = ego_position_;
+        route_path.poses.push_back(ep);
+        for (int i = 1; i < orders.size(); i++) {
+            geometry_msgs::PoseStamped cp;
+            cp.pose.position = centroids_[orders[i] - 1].centroidposition;
+            route_path.poses.push_back(cp);
+        }
+        exploration_route_pub_.publish(route_path);
 
-            for (int i = 1; i < orders.size(); i++) {
-                Centroid* current_cen = &centroids_[orders[i] - 1];
-                bool highIs = assessUnknownRegion(current_cen);
-                if (highIs) {
-                    findnCen++;
-                }
-                if (findnCen == 1 && highIs) {
+        // Chọn hai centroid tốt nhất
+        CandiCentroidPair target_centroid_pairs;
+        int findnCen = 0;
+        for (int i = 1; i < orders.size(); i++) {
+            Centroid* current_cen = &centroids_[orders[i] - 1];
+            if (assessUnknownRegion(current_cen)) {
+                findnCen++;
+                if (findnCen == 1) {
                     target_centroid_pairs.centroidone = centroids_[orders[i] - 1];
                     target_centroid_pairs.oneindexincentroids = orders[i] - 1;
                 }
-                if (findnCen == 2 && highIs) {
+                if (findnCen == 2) {
                     target_centroid_pairs.centroidtwo = centroids_[orders[i] - 1];
                     target_centroid_pairs.twoindexincentroids = orders[i] - 1;
                     break;
@@ -933,129 +879,100 @@ void ExplorationPlanning::execute(const ros::TimerEvent&) {
             }
         }
 
-        std::vector<utils_ns::ViewPoint> target_viewpoint1;
-        std::vector<utils_ns::ViewPoint> target_viewpoint2;
-        Centroid centroid1;
-        Centroid centroid2;
-        target_viewpoint1.clear();
-        target_viewpoint2.clear();
-        if (findnCen == 1) {
-            target_centroid_pairs.centroidtwo = target_centroid_pairs.centroidone;
-            target_centroid_pairs.twoindexincentroids = target_centroid_pairs.oneindexincentroids;
-            first_two_cen_ = target_centroid_pairs;
+        // Xử lý các trường hợp số centroid tìm được
+        std::vector<utils_ns::ViewPoint> target_viewpoint1, target_viewpoint2;
+        Centroid centroid1, centroid2;
+        bool pub_rviz = false;
+        first_two_cen_ = target_centroid_pairs;
 
-            choose_centroids_marker_->marker_.points.clear();
-            choose_centroids_marker_->marker_.points.push_back(first_two_cen_.centroidone.centroidposition);
-            choose_centroids_marker_->marker_.points.push_back(first_two_cen_.centroidtwo.centroidposition);
-            choose_centroids_marker_->Publish();
-
-            centroid1 = first_two_cen_.centroidone;
-            centroid2 = first_two_cen_.centroidtwo;
-
-            target_viewpoint1.push_back(*centroid1.evaluated_viewpoints.begin()->second);
-            auto endpt = centroid2.evaluated_viewpoints.end();
-            endpt--;
-            target_viewpoint2.push_back(*endpt->second);
-            if (!target_viewpoint1.empty() && !target_viewpoint2.empty()) {
-                path_planner_.setViewPointSet(target_viewpoint1, target_viewpoint2, true, true);
-            } else {
-                ROS_INFO("The evaluated centroid does not have a ahead viewpoint.");
+        if (findnCen >= 1) {
+            if (findnCen == 1) {
+                target_centroid_pairs.centroidtwo = target_centroid_pairs.centroidone;
+                target_centroid_pairs.twoindexincentroids = target_centroid_pairs.oneindexincentroids;
             }
-        }
-        if (findnCen == 2) {
-            first_two_cen_ = target_centroid_pairs;
-
-            choose_centroids_marker_->marker_.points.clear();
-            choose_centroids_marker_->marker_.points.push_back(first_two_cen_.centroidone.centroidposition);
-            choose_centroids_marker_->marker_.points.push_back(first_two_cen_.centroidtwo.centroidposition);
-            choose_centroids_marker_->Publish();
-
-            centroid1 = first_two_cen_.centroidone;
-            centroid2 = first_two_cen_.centroidtwo;
-            target_viewpoint1.push_back(*centroid1.evaluated_viewpoints.begin()->second);
-            target_viewpoint2.push_back(*centroid2.evaluated_viewpoints.begin()->second);
-            if (!target_viewpoint1.empty() && !target_viewpoint2.empty()) {
-                path_planner_.setViewPointSet(target_viewpoint1, target_viewpoint2, true, true);
-            } else {
-                ROS_INFO("The evaluated centroid does not have a ahead viewpoint.");
+            centroid1 = target_centroid_pairs.centroidone;
+            centroid2 = target_centroid_pairs.centroidtwo;
+            if (!centroid1.evaluated_viewpoints.empty()) {
+                target_viewpoint1.push_back(*centroid1.evaluated_viewpoints.begin()->second);
+            }
+            if (!centroid2.evaluated_viewpoints.empty()) {
+                auto endpt = centroid2.evaluated_viewpoints.end();
+                endpt--;
+                target_viewpoint2.push_back(*endpt->second);
             }
         } else {
-            if (orders.size() > 1) {
-                target_centroid_pairs.centroidone = centroids_[orders[1] - 1];
-                target_centroid_pairs.oneindexincentroids = orders[1] - 1;
-                target_centroid_pairs.centroidtwo = centroids_[orders[1] - 1];
-                target_centroid_pairs.twoindexincentroids = orders[1] - 1;
-                first_two_cen_ = target_centroid_pairs;
-
-                choose_centroids_marker_->marker_.points.clear();
-                choose_centroids_marker_->marker_.points.push_back(first_two_cen_.centroidone.centroidposition);
-                choose_centroids_marker_->marker_.points.push_back(first_two_cen_.centroidtwo.centroidposition);
-                choose_centroids_marker_->Publish();
-
-                centroid1 = first_two_cen_.centroidone;
-                centroid2 = first_two_cen_.centroidtwo;
-
-                path_planner_.setViewPointSet(centroid1.viewpoint_fir, centroid2.viewpoint_fir, false, false);
-            } else {
-                ROS_INFO("DEBUG: No centroid route!");
-            }
+            target_centroid_pairs.centroidone = centroids_[orders[1] - 1];
+            target_centroid_pairs.oneindexincentroids = orders[1] - 1;
+            target_centroid_pairs.centroidtwo = centroids_[orders[1] - 1];
+            target_centroid_pairs.twoindexincentroids = orders[1] - 1;
+            centroid1 = target_centroid_pairs.centroidone;
+            centroid2 = target_centroid_pairs.centroidtwo;
         }
 
+        // Xuất bản marker cho centroid được chọn
+        choose_centroids_marker_->marker_.points.clear();
+        choose_centroids_marker_->marker_.points.push_back(centroid1.centroidposition);
+        if (findnCen > 1) {
+            choose_centroids_marker_->marker_.points.push_back(centroid2.centroidposition);
+        }
+        choose_centroids_marker_->Publish();
+
+        // Cấu hình path planner
+        if (!target_viewpoint1.empty() && !target_viewpoint2.empty()) {
+            path_planner_.setViewPointSet(target_viewpoint1, target_viewpoint2, true, true);
+        } else {
+            path_planner_.setViewPointSet(centroid1.viewpoint_fir, centroid2.viewpoint_fir, false, false);
+            ROS_INFO("Using default viewpoints due to lack of evaluated viewpoints.");
+        }
+
+        // Xuất bản marker cho viewpoint được chọn
         choose_viewpoints_marker_->marker_.points.clear();
-        if (!path_planner_.getViewPointSet1().empty()) {
-            for (const auto& it : path_planner_.getViewPointSet1()) {
-                choose_viewpoints_marker_->marker_.points.push_back(it.position);
-            }
+        for (const auto& vp : path_planner_.getViewPointSet1()) {
+            choose_viewpoints_marker_->marker_.points.push_back(vp.position);
             pub_rviz = true;
         }
-        if (!path_planner_.getViewPointSet2().empty()) {
-            for (const auto& it : path_planner_.getViewPointSet2()) {
-                choose_viewpoints_marker_->marker_.points.push_back(it.position);
-            }
+        for (const auto& vp : path_planner_.getViewPointSet2()) {
+            choose_viewpoints_marker_->marker_.points.push_back(vp.position);
             pub_rviz = true;
         }
         if (pub_rviz) {
             choose_viewpoints_marker_->Publish();
         }
 
-        utils_ns::Index2 centroidone, centroidtwo;
-        centroidone.x = centroid1.cenindex.x;
-        centroidone.y = centroid1.cenindex.y;
-        centroidtwo.x = centroid2.cenindex.x;
-        centroidtwo.y = centroid2.cenindex.y;
-
-        if (use_viewpoint_plan_ && findnCen != 0) {
+        // Chọn điểm đích cho path planner
+        utils_ns::Index2 centroidone = centroid1.cenindex;
+        utils_ns::Index2 centroidtwo = centroid2.cenindex;
+        if (use_viewpoint_plan_ && findnCen != 0 && !target_viewpoint1.empty() && !target_viewpoint2.empty()) {
             centroidone.x = target_viewpoint1.begin()->indexX;
             centroidone.y = target_viewpoint1.begin()->indexY;
             centroidtwo.x = target_viewpoint2.begin()->indexX;
             centroidtwo.y = target_viewpoint2.begin()->indexY;
+        } else if (findnCen == 0 && !centroid1.viewpoint_fir.empty()) {
+            centroidone.x = centroid1.viewpoint_fir.begin()->indexX;
+            centroidone.y = centroid1.viewpoint_fir.begin()->indexY;
+            if (centroid1.viewpoint_fir.size() > 1) {
+                int end_vp = centroid1.viewpoint_fir.size() - 1;
+                centroidtwo.x = centroid1.viewpoint_fir[end_vp].indexX;
+                centroidtwo.y = centroid1.viewpoint_fir[end_vp].indexY;
+            }
         }
 
+        // Điều chỉnh centroid nếu sử dụng chế độ đi đến centroid gần nhất
         if (use_go_end_nearest_ && findnCen != 0 && !orders.empty()) {
-            int os = orders.size() - 1;
-            auto end_nearest_cen = centroids_[orders[os] - 1];
+            const auto& end_nearest_cen = centroids_[orders[orders.size() - 1] - 1];
             if (abs(end_nearest_cen.centroidposition.x - ego_position_.x) <= end_neacen_disthre_ &&
                 abs(end_nearest_cen.centroidposition.y - ego_position_.y) <= end_neacen_disthre_) {
                 if (abs(centroid1.centroidposition.x - ego_position_.x) /
                         abs(end_nearest_cen.centroidposition.x - ego_position_.x) > end_cur_disrate_ ||
                     abs(centroid1.centroidposition.y - ego_position_.y) /
                         abs(end_nearest_cen.centroidposition.y - ego_position_.y) > end_cur_disrate_) {
-                    centroidone.x = end_nearest_cen.cenindex.x;
-                    centroidone.y = end_nearest_cen.cenindex.y;
-                    centroidtwo.x = centroid1.cenindex.x;
-                    centroidtwo.y = centroid1.cenindex.y;
+                    centroidone = end_nearest_cen.cenindex;
+                    centroidtwo = centroid1.cenindex;
                 }
             }
         }
 
-        if (findnCen == 0) {
-            centroidone.x = centroid1.viewpoint_fir.begin()->indexX;
-            centroidone.y = centroid1.viewpoint_fir.begin()->indexY;
-            int end_vp = centroid1.viewpoint_fir.size() - 1;
-            centroidtwo.x = centroid1.viewpoint_fir[end_vp].indexX;
-            centroidtwo.y = centroid1.viewpoint_fir[end_vp].indexY;
-        }
-
+        // Lập kế hoạch và xuất bản đường đi
         path_planner_.setCentroidPairIndex(centroidone, centroidtwo);
         path_planner_.setPlanMap(global_map_);
         path_planner_.setRobotPosition(ego_position_);
@@ -1064,29 +981,34 @@ void ExplorationPlanning::execute(const ros::TimerEvent&) {
         if (path_planner_.getExplorationPath(exporation_path)) {
             path_planner_.finePath(exporation_path);
             exploration_path_pub_.publish(exporation_path);
+            ROS_INFO("Published exploration path to centroid at (%f, %f).",
+                     centroid1.centroidposition.x, centroid1.centroidposition.y);
             go_home_count_ = 0;
         } else {
             path_planner_.setCentroidPairIndex(centroidtwo, centroidone);
             if (path_planner_.getExplorationPath(exporation_path)) {
                 path_planner_.finePath(exporation_path);
                 exploration_path_pub_.publish(exporation_path);
+                ROS_INFO("Published exploration path to centroid at (%f, %f).",
+                         centroid2.centroidposition.x, centroid2.centroidposition.y);
                 go_home_count_ = 0;
             } else {
                 if (findnCen == 0) {
                     no_path_cens_.push_back(centroid1);
                 }
-                ROS_INFO("Replan.");
                 go_home_count_++;
+                ROS_INFO("Failed to plan path, replanning.");
             }
         }
+    } else {
+        go_home_count_++;
+        ROS_WARN("No centroids found in current window.");
     }
 
+    // Ghi lại thời gian thực thi
     auto end_time = std::chrono::system_clock::now();
-    auto run_time = std::chrono::duration_cast<std::chrono::microseconds>(end_time - begin_time).count();
-    run_time_s = (double)run_time / 1000;
-    if (!flag1) {
-        ROS_WARN("Exploring ...");
-    }
+    run_time_s = std::chrono::duration_cast<std::chrono::microseconds>(end_time - begin_time).count() / 1000.0;
+    ROS_INFO("Execution time: %.2f ms", run_time_s);
 }
 
 geometry_msgs::Point ExplorationPlanning::index2coord(const int& x, const int& y) {
